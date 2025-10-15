@@ -1,3 +1,6 @@
+import org.example.core.TestRunner;
+import org.example.samples.DemoTests;
+
 void main() {
-    System.out.println("Hello from task1!");
+    TestRunner.runTests(DemoTests.class);
 }
