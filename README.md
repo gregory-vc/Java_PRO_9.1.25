@@ -29,7 +29,7 @@
    public void testMethod(int a, String b, int c, boolean d) { .. }
 ```
 ```
-./gradlew :task1:run
+make run_task1
 ```
 
 ## Создание новой задачи
