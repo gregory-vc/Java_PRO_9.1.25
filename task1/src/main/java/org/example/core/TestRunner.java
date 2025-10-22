@@ -8,29 +8,28 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class TestRunner {
+    static final PerAnno EMPTY = new PerAnno(List.of(), 0L, 0L);
+
     public static void runTests(Class<?> c) {
-        Method[] methods = c.getDeclaredMethods();
-        if (isAnnotationNotSingleOrNotStatic(methods, BeforeSuite.class)) {
-            throw new IllegalStateException("@BeforeSuite должно быть не больше одного статического метода");
+        Groups g = groupAll(c.getDeclaredMethods());
+
+        if (Set.of(g.BeforeSuite, g.AfterSuite).stream()
+                .anyMatch(TestRunner::isAnnotationNotSingleOrNotStatic)) {
+            throw new IllegalStateException("должно быть не больше одного статического метода BeforeSuite или AfterSuite");
         }
 
-        if (isAnnotationNotSingleOrNotStatic(methods, AfterSuite.class)) {
-            throw new IllegalStateException("@AfterSuite должно быть не больше одного статического метода");
+        if (Set.of(g.Test, g.BeforeTest, g.AfterTest).stream()
+                .anyMatch(TestRunner::isAnnotationNonStatic)) {
+            throw new IllegalStateException("не должно быть статических методов Test, BeforeTest или AfterTest");
         }
 
-        if (isAnnotationNonStaticExcept(methods, Set.of(AfterSuite.class, BeforeSuite.class))) {
-            throw new IllegalStateException("Не должно быть статических методов кроме AfterSuite и BeforeSuite");
-        }
+        List<Method> m = new ArrayList<>(g.BeforeSuite.methods);
 
-        List<Method> m = getMethodsByAnnotation(methods, BeforeSuite.class);
-        List<Method> bTest = getMethodsByAnnotation(methods, BeforeTest.class);
-        List<Method> aTest = getMethodsByAnnotation(methods, AfterTest.class);
-        List<Method> t = getMethodsByAnnotation(methods, Test.class);
-
-        List<Method> tPriority = t.stream()
+        List<Method> tPriority = g.Test.methods.stream()
                 .sorted(Comparator
                         .comparingInt((Method md) -> md.getAnnotation(Test.class).priority())
                         .reversed()
@@ -41,10 +40,10 @@ public class TestRunner {
                 tPriority.stream()
                         .flatMap(
                                 test -> Stream.concat(
-                                        Stream.concat(bTest.stream(), Stream.of(test)), aTest.stream())
+                                        Stream.concat(g.BeforeTest.methods.stream(), Stream.of(test)), g.AfterTest.methods.stream())
                         ).toList()
         );
-        m.addAll(getMethodsByAnnotation(methods, AfterSuite.class));
+        m.addAll(g.AfterSuite.methods);
 
         m.forEach(a -> call(c, a));
     }
@@ -69,31 +68,64 @@ public class TestRunner {
         }
     }
 
-    static List<Method> getMethodsByAnnotation(Method[] methods, Class<? extends Annotation> anno) {
-        return new ArrayList<>(Arrays.stream(methods).filter(a -> a.isAnnotationPresent(anno)).toList());
+    static Map<Class<? extends Annotation>, PerAnno> groupByAnnotationsStream(Method[] methods, Collection<Class<? extends Annotation>> want) {
+        Set<Class<? extends Annotation>> wantSet = (want instanceof Set)
+                ? (Set<Class<? extends Annotation>>) want
+                : new HashSet<>(want);
+
+        return Arrays.stream(methods)
+                .flatMap(m -> {
+                    boolean isStatic = Modifier.isStatic(m.getModifiers());
+                    return Arrays.stream(m.getDeclaredAnnotations())
+                            .map(Annotation::annotationType)
+                            .filter(wantSet::contains)
+                            .map(a -> new Entry(a, m, isStatic));
+                })
+                .collect(Collectors.groupingBy(
+                        Entry::anno,
+                        LinkedHashMap::new,
+                        Collectors.teeing(
+                                Collectors.mapping(Entry::method, Collectors.toList()),
+                                Collectors.summarizingLong(e -> e.isStatic() ? 1L : 0L),
+                                (list, stat) -> new PerAnno(list, stat.getSum(), list.size() - stat.getSum())
+                        )
+                ));
     }
 
-    static boolean isAnnotationNotSingleOrNotStatic(Method[] methods, Class<? extends Annotation> anno) {
-        long countStatic = Arrays.stream(methods)
-                .filter(a -> a.isAnnotationPresent(anno))
-                .filter(a -> Modifier.isStatic(a.getModifiers()))
-                .limit(2)
-                .count();
-        long countNonStatic = Arrays.stream(methods)
-                .filter(a -> a.isAnnotationPresent(anno))
-                .filter(a -> !Modifier.isStatic(a.getModifiers()))
-                .limit(2)
-                .count();
-        return countStatic != 1L || countNonStatic != 0L;
+    static boolean isAnnotationNotSingleOrNotStatic(PerAnno anno) {
+        return anno.staticCount > 1L || anno.instanceCount != 0L;
     }
 
-    static boolean isAnnotationNonStaticExcept(Method[] methods,  Set<Class<? extends Annotation>> anno) {
-        long count = Arrays.stream(methods)
-                .filter(a -> anno.stream().noneMatch(a::isAnnotationPresent))
-                .filter(a -> Modifier.isStatic(a.getModifiers()))
-                .count();
-        return count > 0L;
+    static boolean isAnnotationNonStatic(PerAnno anno) {
+        return anno.staticCount > 0L;
     }
 
+    static Groups groupAll(Method[] methods) {
+        Map<Class<? extends Annotation>, PerAnno> g = groupByAnnotationsStream(methods,
+                List.of(BeforeSuite.class, AfterSuite.class, BeforeTest.class, AfterTest.class, Test.class));
+
+        return new Groups(
+                g.getOrDefault(BeforeSuite.class, EMPTY),
+                g.getOrDefault(BeforeTest.class, EMPTY),
+                g.getOrDefault(AfterTest.class, EMPTY),
+                g.getOrDefault(Test.class, EMPTY),
+                g.getOrDefault(AfterSuite.class, EMPTY)
+        );
+    }
+
+    record Entry(Class<? extends Annotation> anno, Method method, boolean isStatic) {
+    }
+
+    record PerAnno(List<Method> methods, long staticCount, long instanceCount) {
+    }
+
+    record Groups(
+            PerAnno BeforeSuite,
+            PerAnno BeforeTest,
+            PerAnno AfterTest,
+            PerAnno Test,
+            PerAnno AfterSuite
+    ) {
+    }
 
 }

@@ -27,7 +27,7 @@ public class DemoTests {
     @Test(priority = 3)
     @CsvSource(csv = "10, Java, 20, true")
     public void Method5(int a, String b, int c, boolean d) {
-        IO.println("Method5 Test with priority 3: int a = "+a+", String b = "+b+", int c = "+c+", boolean d = " + d);
+        IO.println("Method5 Test with priority 3: int a = " + a + ", String b = " + b + ", int c = " + c + ", boolean d = " + d);
     }
 
     @BeforeTest
