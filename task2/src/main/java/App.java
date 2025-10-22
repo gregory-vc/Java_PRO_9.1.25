@@ -66,4 +66,38 @@ void main() {
 
     IO.println(avgAgeEng);
 
+    // Найдите в списке слов самое длинное
+    List<String> lWords = List.of("232", "9934ewew", "sdlkdsiojf8sdf", "sdfs");
+    String word = lWords.stream().max(Comparator.comparingInt(String::length)).orElseThrow();
+    IO.println(word);
+
+    // Имеется строка с набором слов в нижнем регистре, разделенных пробелом. Постройте хеш-мапы, в которой будут хранится пары: слово - сколько раз оно встречается во входной строке
+
+    String str = "sdfds_fdf_dfdf_dfdf_fdf_ddd_afd";
+
+    Map<String, Long> freq = Arrays.stream(str.split("_")).collect(Collectors.groupingBy(
+            Function.identity(),
+            LinkedHashMap::new,
+            Collectors.counting()
+    ));
+
+    IO.println(freq);
+
+
+    // Отпечатайте в консоль строки из списка в порядке увеличения длины слова, если слова имеют одинаковую длины, то должен быть сохранен алфавитный порядок
+
+    Arrays.stream(str.split("_"))
+            .sorted(Comparator.comparingInt(String::length).thenComparing(Comparator.naturalOrder()))
+            .forEach(IO::println);
+
+    IO.println("_");
+    // Имеется массив строк, в каждой из которых лежит набор из 5 слов, разделенных пробелом, найдите среди всех слов самое длинное, если таких слов несколько, получите любое из них
+
+    List<String> ma = List.of("sdsdd ds dsfsdf dsf sdfdsf sd", "sdsd ffd dfsdfdsfsdf dfd dfsfsf");
+
+    IO.println(ma.stream()
+            .flatMap(w -> Arrays.stream(w.split(" ")))
+            .max(Comparator.comparingInt(String::length))
+            .orElseThrow());
+
 }
