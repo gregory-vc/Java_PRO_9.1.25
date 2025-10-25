@@ -14,57 +14,57 @@ import java.util.stream.Stream;
 public class TestRunner {
     static final PerAnno EMPTY = new PerAnno(List.of(), 0L, 0L);
 
-    public static void runTests(Class<?> c) {
-        Groups g = groupAll(c.getDeclaredMethods());
+    public static void runTests(Class<?> aClass) {
+        Groups groups = groupAll(aClass.getDeclaredMethods());
 
-        if (Set.of(g.BeforeSuite, g.AfterSuite).stream()
+        if (Set.of(groups.beforeSuite, groups.afterSuite).stream()
                 .anyMatch(TestRunner::isAnnotationNotSingleOrNotStatic)) {
-            throw new IllegalStateException("должно быть не больше одного статического метода BeforeSuite или AfterSuite");
+            throw new IllegalStateException("должно быть не больше одного статического метода beforeSuite или afterSuite");
         }
 
-        if (Set.of(g.Test, g.BeforeTest, g.AfterTest).stream()
+        if (Set.of(groups.test, groups.beforeTest, groups.afterTest).stream()
                 .anyMatch(TestRunner::isAnnotationNonStatic)) {
-            throw new IllegalStateException("не должно быть статических методов Test, BeforeTest или AfterTest");
+            throw new IllegalStateException("не должно быть статических методов test, beforeTest или afterTest");
         }
 
-        List<Method> m = new ArrayList<>(g.BeforeSuite.methods);
+        List<Method> methodList = new ArrayList<>(groups.beforeSuite.methods);
 
-        List<Method> tPriority = g.Test.methods.stream()
+        List<Method> tPriority = groups.test.methods.stream()
                 .sorted(Comparator
                         .comparingInt((Method md) -> md.getAnnotation(Test.class).priority())
                         .reversed()
                 )
                 .toList();
 
-        m.addAll(
+        methodList.addAll(
                 tPriority.stream()
                         .flatMap(
                                 test -> Stream.concat(
-                                        Stream.concat(g.BeforeTest.methods.stream(), Stream.of(test)), g.AfterTest.methods.stream())
+                                        Stream.concat(groups.beforeTest.methods.stream(), Stream.of(test)), groups.afterTest.methods.stream())
                         ).toList()
         );
-        m.addAll(g.AfterSuite.methods);
+        methodList.addAll(groups.afterSuite.methods);
 
-        m.forEach(a -> call(c, a));
+        methodList.forEach(a -> call(aClass, a));
     }
 
-    static void call(Class<?> c, Method m) {
+    static void call(Class<?> aClass, Method method) {
         try {
-            m.trySetAccessible();
-            Object instance = c.getDeclaredConstructor().newInstance();
-            Object target = Modifier.isStatic(m.getModifiers()) ? null : instance;
+            method.trySetAccessible();
+            Object instance = aClass.getDeclaredConstructor().newInstance();
+            Object target = Modifier.isStatic(method.getModifiers()) ? null : instance;
 
-            if (m.isAnnotationPresent(CsvSource.class)) {
-                CsvSource ann = m.getDeclaredAnnotation(CsvSource.class);
-                Csv args = new Csv(m, ann.csv());
-                m.invoke(target, args.GetArgs());
+            if (method.isAnnotationPresent(CsvSource.class)) {
+                CsvSource ann = method.getDeclaredAnnotation(CsvSource.class);
+                Csv args = new Csv(method, ann.csv());
+                method.invoke(target, args.GetArgs());
             } else {
-                m.invoke(target);
+                method.invoke(target);
             }
         } catch (InvocationTargetException e) {
-            throw new RuntimeException("Method threw: " + m, e.getCause());
+            throw new RuntimeException("Method threw: " + method, e.getCause());
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to invoke: " + m, e);
+            throw new RuntimeException("Failed to invoke: " + method, e);
         }
     }
 
@@ -101,15 +101,15 @@ public class TestRunner {
     }
 
     static Groups groupAll(Method[] methods) {
-        Map<Class<? extends Annotation>, PerAnno> g = groupByAnnotationsStream(methods,
+        Map<Class<? extends Annotation>, PerAnno> grouped = groupByAnnotationsStream(methods,
                 List.of(BeforeSuite.class, AfterSuite.class, BeforeTest.class, AfterTest.class, Test.class));
 
         return new Groups(
-                g.getOrDefault(BeforeSuite.class, EMPTY),
-                g.getOrDefault(BeforeTest.class, EMPTY),
-                g.getOrDefault(AfterTest.class, EMPTY),
-                g.getOrDefault(Test.class, EMPTY),
-                g.getOrDefault(AfterSuite.class, EMPTY)
+                grouped.getOrDefault(BeforeSuite.class, EMPTY),
+                grouped.getOrDefault(BeforeTest.class, EMPTY),
+                grouped.getOrDefault(AfterTest.class, EMPTY),
+                grouped.getOrDefault(Test.class, EMPTY),
+                grouped.getOrDefault(AfterSuite.class, EMPTY)
         );
     }
 
@@ -120,11 +120,11 @@ public class TestRunner {
     }
 
     record Groups(
-            PerAnno BeforeSuite,
-            PerAnno BeforeTest,
-            PerAnno AfterTest,
-            PerAnno Test,
-            PerAnno AfterSuite
+            PerAnno beforeSuite,
+            PerAnno beforeTest,
+            PerAnno afterTest,
+            PerAnno test,
+            PerAnno afterSuite
     ) {
     }
 
