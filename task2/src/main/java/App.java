@@ -77,7 +77,6 @@ void main() {
 
     Map<String, Long> freq = Arrays.stream(str.split("_")).collect(Collectors.groupingBy(
             Function.identity(),
-            LinkedHashMap::new,
             Collectors.counting()
     ));
 
