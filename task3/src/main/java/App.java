@@ -18,12 +18,13 @@ void main() throws InterruptedException {
         long waitedNanos = System.nanoTime() - start;
         Duration waited = Duration.ofNanos(waitedNanos);
 
-        System.out.println("Поток: " + i + " завершился за " + waited.toMillis() + " ms");
+        IO.println("Thread: " + i + " was done for " + waited.toMillis() + " ms");
     }));
 
     Thread.sleep(Duration.ofSeconds(7L));
 
     pool.shutdown();
+    IO.println("Pool was shutdown");
 
     long start = System.nanoTime();
     pool.awaitTermination();
@@ -31,5 +32,5 @@ void main() throws InterruptedException {
     long waitedNanos = System.nanoTime() - start;
     Duration waited = Duration.ofNanos(waitedNanos);
 
-    System.out.println("Ждали корректного завершения потоков: " + waited.toMillis() + " ms");
+    IO.println("Wait graceful shutdown for: " + waited.toMillis() + " ms");
 }

@@ -11,10 +11,11 @@ import java.util.stream.IntStream;
 
 public class Pool {
     private static final Logger log = LoggerFactory.getLogger(Pool.class);
-    LinkedList<Runnable> queue = new LinkedList<>();
-    LinkedList<Thread> pool = new LinkedList<>();
-    ReentrantLock mu = new ReentrantLock();
-    Condition notEmpty = mu.newCondition();
+    private final LinkedList<Runnable> queue = new LinkedList<>();
+    private final LinkedList<Thread> pool = new LinkedList<>();
+    private final ReentrantLock mu = new ReentrantLock();
+    private final Condition notEmpty = mu.newCondition();
+    private boolean shutdown = false;
 
     public Pool(Integer size) {
         IntStream.range(0, size).forEach(_ -> {
@@ -24,9 +25,13 @@ public class Pool {
                     try {
                         this.mu.lockInterruptibly();
                         try {
-                            while ((f = this.queue.poll()) == null) {
+                            while (this.queue.isEmpty() && !this.shutdown) {
                                 this.notEmpty.await();
                             }
+                            if (this.queue.isEmpty()) {
+                                return;
+                            }
+                            f = this.queue.removeFirst();
                         } finally {
                             this.mu.unlock();
                         }
@@ -50,6 +55,9 @@ public class Pool {
     public void execute(Runnable f) {
         this.mu.lock();
         try {
+            if (this.shutdown) {
+                throw new IllegalStateException("Pool already shutdown");
+            }
             this.queue.add(f);
             this.notEmpty.signal();
         } finally {
@@ -58,11 +66,22 @@ public class Pool {
     }
 
     public void shutdown() {
-
+        this.mu.lock();
+        try {
+            this.shutdown = true;
+            this.notEmpty.signalAll();
+        } finally {
+            this.mu.unlock();
+        }
     }
 
     public void awaitTermination() {
-
+        this.pool.forEach(t -> {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
     }
-
 }
