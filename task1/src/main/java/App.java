@@ -2,5 +2,9 @@ import org.example.core.TestRunner;
 import org.example.samples.DemoTests;
 
 void main() {
-    TestRunner.runTests(DemoTests.class);
+    try {
+        TestRunner.runTests(DemoTests.class);
+    } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+    }
 }

@@ -12,37 +12,37 @@ import java.util.Comparator;
 import java.util.List;
 
 public class TestRunner {
-    public static void runTests(Class<?> aClass) {
+    public static void runTests(Class<?> aClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Groups groups = groupAll(aClass.getDeclaredMethods());
 
         List<Method> plan = new ArrayList<>();
         plan.add(groups.beforeSuiteMethod);
-        for (Method m : groups.testMethods) {
+        for (Method method : groups.testMethods) {
             plan.addAll(groups.beforeTestMethods);
-            plan.add(m);
+            plan.add(method);
             plan.addAll(groups.afterTestMethods);
         }
         plan.add(groups.afterSuiteMethod);
-        plan.forEach(a -> call(aClass, a));
+
+        Object instance = aClass.getDeclaredConstructor().newInstance();
+        plan.forEach(method -> {
+            try {
+                call(method, instance);
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
-    static void call(Class<?> aClass, Method method) {
-        try {
-            method.trySetAccessible();
-            Object instance = aClass.getDeclaredConstructor().newInstance();
-            Object target = Modifier.isStatic(method.getModifiers()) ? null : instance;
-
-            if (method.isAnnotationPresent(CsvSource.class)) {
-                CsvSource ann = method.getDeclaredAnnotation(CsvSource.class);
-                Csv args = new Csv(method, ann.csv());
-                method.invoke(target, args.GetArgs());
-            } else {
-                method.invoke(target);
-            }
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Method threw: " + method, e.getCause());
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to invoke: " + method, e);
+    static void call(Method method, Object instance) throws InvocationTargetException, IllegalAccessException {
+        method.trySetAccessible();
+        Object target = Modifier.isStatic(method.getModifiers()) ? null : instance;
+        if (method.isAnnotationPresent(CsvSource.class)) {
+            CsvSource ann = method.getDeclaredAnnotation(CsvSource.class);
+            Csv args = new Csv(method, ann.csv());
+            method.invoke(target, args.GetArgs());
+        } else {
+            method.invoke(target);
         }
     }
 
