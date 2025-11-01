@@ -44,7 +44,7 @@ KTS
 
 cat > "$MOD_DIR/src/main/java/App.java" <<'JAVA'
 void main() {
-    System.out.println("Hello from new task!");
+    IO.println("Hello from new task!");
 }
 JAVA
 

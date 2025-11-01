@@ -7,6 +7,10 @@ import org.gradle.api.tasks.JavaExec
 allprojects {
     group = "org.example"
     version = "0.1.0"
+
+    repositories {
+        mavenCentral()
+    }
 }
 
 subprojects {
