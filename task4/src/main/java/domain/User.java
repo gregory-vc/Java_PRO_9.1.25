@@ -1,4 +1,4 @@
 package domain;
 
-public class User {
+public record User(long id, String username) {
 }
