@@ -13,6 +13,7 @@ import org.springframework.core.env.Environment;
 public class AppConfig {
 
     @Bean(destroyMethod = "close")
+    @SuppressWarnings("unused")
     public DbPool dbPool(Environment env) {
         String url = env.getRequiredProperty("datasource.url");
         String username = env.getRequiredProperty("datasource.username");
