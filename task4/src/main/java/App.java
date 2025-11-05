@@ -1,3 +1,11 @@
+import config.AppConfig;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import service.UserService;
+
 void main() {
-    IO.println("Hello from new task!");
+
+    try (AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class)) {
+        UserService us = ctx.getBean(UserService.class);
+        IO.println("123");
+    }
 }
