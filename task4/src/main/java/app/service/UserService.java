@@ -1,8 +1,8 @@
-package service;
+package app.service;
 
+import app.repository.UserDao;
 import domain.User;
 import org.springframework.stereotype.Service;
-import repository.UserDao;
 
 import java.util.Optional;
 
