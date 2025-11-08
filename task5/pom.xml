@@ -13,6 +13,7 @@
         <maven.compiler.release>25</maven.compiler.release>
         <postgresql.version>42.7.8</postgresql.version>
         <spring.boot.version>3.5.7</spring.boot.version>
+        <flyway.version>11.16.0</flyway.version>
     </properties>
 
     <dependencies>
@@ -25,6 +26,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
             <version>${spring.boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>${flyway.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <version>${flyway.version}</version>
         </dependency>
     </dependencies>
 

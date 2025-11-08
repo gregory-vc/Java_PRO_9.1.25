@@ -32,18 +32,18 @@ public class DefaultCommandLineRunner implements CommandLineRunner {
         log.info("Default CommandLineRunner executed; userService bean: {}", userService.getClass().getSimpleName());
 
         User user1 = userService.create(new User(withUniqueNumber("user1")));
-        log.info(user1.getUsername());
+        log.info("{}, {}", user1.getId(), user1.getUsername());
 
         user1.setUsername(withUniqueNumber("user2"));
 
         User user2affected = userService.update(user1);
-        log.info(user2affected.getUsername());
+        log.info("{}, {}", user2affected.getId(), user2affected.getUsername());
 
         Optional<User> user3 = userService.findById(user2affected.getId());
         User user4 = user3.orElse(new User("empty"));
-        log.info(user4.getUsername());
+        log.info("{}, {}", user4.getId(), user4.getUsername());
 
         userService.deleteById(user4.getId());
-        log.info("user {} successfully delete", user4.getUsername());
+        log.info("user {}, {} successfully delete", user4.getId(), user4.getUsername());
     }
 }
