@@ -12,3 +12,9 @@ build_task4:
 
 run_task4:
 	mvn -f task4/pom.xml exec:exec
+
+build_task5:
+	mvn -f task5/pom.xml compile
+
+run_task5:
+	mvn -f task5/pom.xml exec:exec
