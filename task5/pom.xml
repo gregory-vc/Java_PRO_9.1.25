@@ -12,9 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>25</maven.compiler.release>
         <postgresql.version>42.7.8</postgresql.version>
-        <hikari.version>7.0.2</hikari.version>
-        <spring.version>6.2.12</spring.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <spring.boot.version>3.5.7</spring.boot.version>
     </properties>
 
     <dependencies>
@@ -24,19 +22,9 @@
             <version>${postgresql.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>${hikari.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <version>${spring.boot.version}</version>
         </dependency>
     </dependencies>
 
@@ -62,7 +50,7 @@
                         <argument>--enable-preview</argument>
                         <argument>-cp</argument>
                         <classpath/>
-                        <argument>app.App</argument>
+                        <argument>task5.App</argument>
                     </arguments>
                 </configuration>
             </plugin>
