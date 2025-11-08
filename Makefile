@@ -6,3 +6,9 @@ run_task2:
 
 run_task3:
 	./gradlew ":task3:run"
+
+build_task4:
+	mvn -f task4/pom.xml compile
+
+run_task4:
+	mvn -f task4/pom.xml exec:exec
